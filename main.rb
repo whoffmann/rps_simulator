@@ -1,30 +1,98 @@
 class Main
   OPTIONS = %i(attack dodge grab)
+  NUM_ROUNDS = 3
 
-  def score_all_decks
-    deck_matchup_permutations.map do |(d1, d2)|
-      Round.new(d1, d2).score
-    end.each_with_object(Hash.new(0)) do |score, score_count|
-      score_count[score] += 1
+  def games
+    deck_matchups.to_a.repeated_permutation(NUM_ROUNDS).map do |decks|
+      Game.new(decks)
     end
   end
 
-  def deck_matchup_permutations
+  def play_games
+    total = 0
+    all_results = games.each_with_object(Hash.new(0)) do |game, result|
+      game_result = game.play
+
+      if game_result > 0
+        result[:wins] += 1
+      elsif game_result < 0
+        result[:losses] += 1
+      else
+        result[:ties] += 1
+      end
+
+      total += 1
+    end
+
+    all_results.each_with_object({}) do |(key, value), percentages|
+      percentages[key] = value * 100.0 / total
+    end
+  end
+
+  def deck_matchups
     OPTIONS.permutation.to_a.repeated_permutation(2)
   end
 end
 
+class Player
+  attr_reader :health
+
+  def initialize(health: 5)
+    @health = health
+  end
+
+  def damage!(amount=1)
+    @health -= amount
+  end
+
+  def defeated?
+    health <= 0
+  end
+
+  def set_health(new_health)
+    health = new_health
+  end
+end
+
+class Game
+  attr_reader :rounds, :p1, :p2
+
+  def initialize(decks)
+    @p1 = Player.new
+    @p2 = Player.new
+    @rounds = decks.map do |(p1_deck, p2_deck)|
+      Round.new(p1_deck, p2_deck)
+    end
+  end
+
+  def play
+    rounds.each do |round|
+      round.play(p1, p2)
+    end
+
+    result
+  end
+
+  def result
+    p1.health - p2.health
+  end
+end
+
 class Round
-  attr_reader :p1_deck, :p2_deck
+  attr_reader :p1_deck, :p2_deck, :turns
 
   def initialize(p1_deck, p2_deck)
     @p1_deck = p1_deck
     @p2_deck = p2_deck
+    @turns = p1_deck.zip(p2_deck).map do |(p1_card, p2_card)|
+      Turn.new(p1_card, p2_card)
+    end
   end
 
-  def score
-    p1_deck.zip(p2_deck).inject(0) do |total_score, (p1_card, p2_card)|
-      total_score += Turn.new(p1_card, p2_card).score
+  def play(p1, p2)
+    turns.each do |turn|
+      return if p1.defeated? || p2.defeated?
+      turn.play(p1, p2)
     end
   end
 end
@@ -37,25 +105,25 @@ class Turn
     @p2_card = p2_card
   end
 
-  def score
+  def play(p1, p2)
     case p1_card
     when :attack
       case p2_card
-      when :attack then 0
-      when :dodge then 0
-      when :grab then 1
+      when :attack then p1.damage!; p2.damage!
+      when :dodge then nil
+      when :grab then p2.damage!
       end
     when :dodge
       case p2_card
-      when :attack then 0
-      when :dodge then 0
-      when :grab then -1
+      when :attack then nil
+      when :dodge then nil
+      when :grab then p1.damage!
       end
     when :grab
       case p2_card
-      when :attack then -1
-      when :dodge then 1
-      when :grab then 0
+      when :attack then p1.damage!
+      when :dodge then p2.damage!
+      when :grab then nil
       end
     end
   end
