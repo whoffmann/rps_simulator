@@ -1,5 +1,6 @@
 require_relative 'player'
 require_relative 'foresight_player'
+require_relative 'sturdy_player'
 require_relative 'game'
 require_relative 'round'
 require_relative 'turn'
@@ -32,8 +33,12 @@ def deck_matchups
   OPTIONS.permutation.to_a.repeated_permutation(2)
 end
 
+def game_permutations
+  @game_permutations ||= deck_matchups.to_a.repeated_permutation(NUM_ROUNDS).to_a
+end
+
 def games(p1, p2)
-  deck_matchups.to_a.repeated_permutation(NUM_ROUNDS).map do |decks|
+  game_permutations.map do |decks|
     Game.new(decks, p1.clone, p2.clone)
   end
 end
@@ -43,3 +48,6 @@ puts play_games
 
 puts "Foresight vs Normal Player"
 puts play_games(p1: ForesightPlayer.new)
+
+puts "Sturdy Player vs Normal Player"
+puts play_games(p1: SturdyPlayer.new)

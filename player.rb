@@ -1,7 +1,7 @@
 class Player
   attr_reader :health
 
-  def initialize(health: 5)
+  def initialize(health: 4)
     @health = health
   end
 
