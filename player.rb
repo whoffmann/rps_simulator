@@ -1,5 +1,5 @@
 class Player
-  attr_reader :health
+  attr_accessor :health
 
   def initialize(health: 4)
     @health = health
@@ -11,10 +11,6 @@ class Player
 
   def defeated?
     health <= 0
-  end
-
-  def set_health(new_health)
-    health = new_health
   end
 
   def round_mutator(p1_deck, p2_deck)

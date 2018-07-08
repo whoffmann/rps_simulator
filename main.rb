@@ -1,14 +1,12 @@
-require_relative 'player'
-require_relative 'foresight'
-require_relative 'sturdy'
 require_relative 'game'
 require_relative 'round'
 require_relative 'turn'
+require_relative 'player_builder'
 
 OPTIONS = %i(attack dodge grab)
 NUM_ROUNDS = 3
 
-def play_games(p1: Player.new, p2: Player.new)
+def play_games(p1:, p2:)
   total = 0
   all_results = games(p1, p2).each_with_object(Hash.new(0)) do |game, result|
     game_result = game.play
@@ -43,22 +41,34 @@ def games(p1, p2)
   end
 end
 
-normal_player    = Player.new
-foresight_player = Player.new.extend(Foresight)
-sturdy_player    = Player.new.extend(Sturdy)
-psychic_wall     = Player.new.extend(Foresight, Sturdy)
+normal_player    = PlayerBuilder.build
+foresight_player = PlayerBuilder.build(&:set_foresight)
+sturdy_player    = PlayerBuilder.build(&:set_sturdy)
+
+psychic_wall = PlayerBuilder.build do |builder|
+  builder.set_foresight
+  builder.set_sturdy
+end
+
+weak_wall = PlayerBuilder.build do |builder|
+  builder.set_health(3)
+  builder.set_sturdy
+end
 
 puts "Normal Players"
 puts play_games(p1: normal_player, p2: normal_player)
 
 puts "Foresight vs Normal Player"
-puts play_games(p1: foresight_player)
+puts play_games(p1: foresight_player, p2: normal_player)
 
 puts "Sturdy Player vs Normal Player"
-puts play_games(p1: sturdy_player)
+puts play_games(p1: sturdy_player, p2: normal_player)
 
 puts "Foresight & Sturdy Player vs Normal Player"
-puts play_games(p1: psychic_wall)
+puts play_games(p1: psychic_wall, p2: normal_player)
 
 puts "Foresight vs Sturdy"
 puts play_games(p1: foresight_player, p2: sturdy_player)
+
+puts "Weak Wall vs Normal Player"
+puts play_games(p1: weak_wall, p2: normal_player)
