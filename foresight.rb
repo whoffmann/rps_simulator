@@ -1,5 +1,7 @@
-class ForesightPlayer < Player
+module Foresight
   def round_mutator(p1_deck, p2_deck)
+    super(p1_deck, p2_deck)
+
     peek_card = p2_deck[0]
     unmodified_card = p1_deck[0]
     swap_card = p1_deck[1]

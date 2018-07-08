@@ -1,6 +1,6 @@
 require_relative 'player'
-require_relative 'foresight_player'
-require_relative 'sturdy_player'
+require_relative 'foresight'
+require_relative 'sturdy'
 require_relative 'game'
 require_relative 'round'
 require_relative 'turn'
@@ -43,11 +43,22 @@ def games(p1, p2)
   end
 end
 
+normal_player    = Player.new
+foresight_player = Player.new.extend(Foresight)
+sturdy_player    = Player.new.extend(Sturdy)
+psychic_wall     = Player.new.extend(Foresight, Sturdy)
+
 puts "Normal Players"
-puts play_games
+puts play_games(p1: normal_player, p2: normal_player)
 
 puts "Foresight vs Normal Player"
-puts play_games(p1: ForesightPlayer.new)
+puts play_games(p1: foresight_player)
 
 puts "Sturdy Player vs Normal Player"
-puts play_games(p1: SturdyPlayer.new)
+puts play_games(p1: sturdy_player)
+
+puts "Foresight & Sturdy Player vs Normal Player"
+puts play_games(p1: psychic_wall)
+
+puts "Foresight vs Sturdy"
+puts play_games(p1: foresight_player, p2: sturdy_player)
