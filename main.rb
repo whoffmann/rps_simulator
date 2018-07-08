@@ -2,15 +2,15 @@ class Main
   OPTIONS = %i(attack dodge grab)
   NUM_ROUNDS = 3
 
-  def games
+  def games(p1, p2)
     deck_matchups.to_a.repeated_permutation(NUM_ROUNDS).map do |decks|
-      Game.new(decks)
+      Game.new(decks, p1.clone, p2.clone)
     end
   end
 
-  def play_games
+  def play_games(p1: Player.new, p2: Player.new)
     total = 0
-    all_results = games.each_with_object(Hash.new(0)) do |game, result|
+    all_results = games(p1, p2).each_with_object(Hash.new(0)) do |game, result|
       game_result = game.play
 
       if game_result > 0
@@ -52,14 +52,28 @@ class Player
   def set_health(new_health)
     health = new_health
   end
+
+  def round_mutator(p1_deck, p2_deck)
+  end
+end
+
+class ForesightPlayer < Player
+  def round_mutator(p1_deck, p2_deck)
+    peek_card = p2_deck[0]
+    unmodified_card = p1_deck[0]
+    swap_card = p1_deck[1]
+    if Turn.new(swap_card, peek_card).score > Turn.new(unmodified_card, peek_card).score
+      p1_deck[0], p1_deck[1] = p1_deck[1], p1_deck[0]
+    end
+  end
 end
 
 class Game
   attr_reader :rounds, :p1, :p2
 
-  def initialize(decks)
-    @p1 = Player.new
-    @p2 = Player.new
+  def initialize(decks, p1, p2)
+    @p1 = p1
+    @p2 = p2
     @rounds = decks.map do |(p1_deck, p2_deck)|
       Round.new(p1_deck, p2_deck, p1, p2)
     end
@@ -87,13 +101,8 @@ class Round
     @p1 = p1
     @p2 = p2
 
-    # foresight
-    peek_card = p2_deck[0]
-    unmodified_card = p1_deck[0]
-    swap_card = p1_deck[1]
-    if Turn.new(swap_card, peek_card).score > Turn.new(unmodified_card, peek_card).score
-      p1_deck[0], p1_deck[1] = p1_deck[1], p1_deck[0]
-    end
+    p1.round_mutator(p1_deck, p2_deck)
+    p2.round_mutator(p1_deck, p2_deck)
 
     @turns = p1_deck.zip(p2_deck).map do |(p1_card, p2_card)|
       Turn.new(p1_card, p2_card)
@@ -162,3 +171,9 @@ class Turn
     end
   end
 end
+
+puts "Normal Players"
+puts Main.new.play_games
+
+puts "Foresight vs Normal Player"
+puts Main.new.play_games(p1: ForesightPlayer.new)
