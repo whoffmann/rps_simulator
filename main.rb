@@ -61,13 +61,13 @@ class Game
     @p1 = Player.new
     @p2 = Player.new
     @rounds = decks.map do |(p1_deck, p2_deck)|
-      Round.new(p1_deck, p2_deck)
+      Round.new(p1_deck, p2_deck, p1, p2)
     end
   end
 
   def play
     rounds.each do |round|
-      round.play(p1, p2)
+      round.play
     end
 
     result
@@ -79,17 +79,28 @@ class Game
 end
 
 class Round
-  attr_reader :p1_deck, :p2_deck, :turns
+  attr_reader :p1_deck, :p2_deck, :p1, :p2, :turns
 
-  def initialize(p1_deck, p2_deck)
+  def initialize(p1_deck, p2_deck, p1, p2)
     @p1_deck = p1_deck
     @p2_deck = p2_deck
+    @p1 = p1
+    @p2 = p2
+
+    # foresight
+    peek_card = p2_deck[0]
+    unmodified_card = p1_deck[0]
+    swap_card = p1_deck[1]
+    if Turn.new(swap_card, peek_card).score > Turn.new(unmodified_card, peek_card).score
+      p1_deck[0], p1_deck[1] = p1_deck[1], p1_deck[0]
+    end
+
     @turns = p1_deck.zip(p2_deck).map do |(p1_card, p2_card)|
       Turn.new(p1_card, p2_card)
     end
   end
 
-  def play(p1, p2)
+  def play
     turns.each do |turn|
       return if p1.defeated? || p2.defeated?
       turn.play(p1, p2)
@@ -124,6 +135,29 @@ class Turn
       when :attack then p1.damage!
       when :dodge then p2.damage!
       when :grab then nil
+      end
+    end
+  end
+
+  def score
+    case p1_card
+    when :attack
+      case p2_card
+      when :attack then 0
+      when :dodge then 0
+      when :grab then 1
+      end
+    when :dodge
+      case p2_card
+      when :attack then 0
+      when :dodge then 0
+      when :grab then -1
+      end
+    when :grab
+      case p2_card
+      when :attack then -1
+      when :dodge then 1
+      when :grab then 0
       end
     end
   end
